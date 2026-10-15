@@ -1,5 +1,5 @@
 import ThemedText from '@/components/Themed/ThemedText'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 const Courts = () => {
   return (

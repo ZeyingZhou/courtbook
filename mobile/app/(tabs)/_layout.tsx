@@ -64,19 +64,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Two',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }}
-              tintColor={color}
-              size={24}
-            />
-          ),
-        }}
-      />
     </Tabs>
   );
 }
