@@ -1,11 +1,23 @@
 import ThemedText from '@/components/Themed/ThemedText'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const Courts = () => {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
-      <ThemedText>Courts</ThemedText>
+    <>
+    <View
+      style={[styles.container, {paddingTop: insets.top + 20}]}
+    >
+    <View>
+        <ThemedText style={styles.title}>CourtBook 🎾</ThemedText>
     </View>
+    
+    <ScrollView horizontal>
+      <ScrollView></ScrollView>
+    </ScrollView>
+    </View>
+    </>
   )
 }
 
@@ -14,7 +26,7 @@ export default Courts
 const styles = StyleSheet.create({
     container: {
         flex:1,
-        alignItems: 'center',
+        padding: 20,
         justifyContent: 'center'
     },
     title: {
