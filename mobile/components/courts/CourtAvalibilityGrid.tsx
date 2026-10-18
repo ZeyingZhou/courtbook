@@ -1,11 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { StyleSheet } from 'react-native'
+import TimeSlotCell from './TimeSlotCell'
+
+
 
 const CourtAvalibilityGrid = () => {
   return (
-        <View>
-        <Text>CourtAvalibilityGrid</Text>
-        </View>
+      <TimeSlotCell></TimeSlotCell>
   )
 }
 

@@ -1,8 +1,21 @@
+import CourtAvalibilityGrid from '@/components/courts/CourtAvalibilityGrid';
+import DateSelector from '@/components/courts/DateSelector';
+import FacilitySelector from '@/components/courts/FacilitySelector';
+import Spacer from '@/components/Spacer';
 import ThemedText from '@/components/Themed/ThemedText'
+import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+const facilities = [
+  { id: '1', name: 'Riverside Tennis Center' },
+  { id: '2', name: 'Central Park Courts' },
+  { id: '3', name: 'Northside Racquet Club' },
+  { id: '4', name: 'Eastside Tennis Club' },
+  { id: '5', name: 'Lakeside Courts' },
+]
 const Courts = () => {
+  const [selectedFacilityId, setSelectedFacilityId] = useState('1');
   const insets = useSafeAreaInsets();
   return (
     <>
@@ -12,9 +25,21 @@ const Courts = () => {
     <View>
         <ThemedText style={styles.title}>CourtBook 🎾</ThemedText>
     </View>
-    
+    <Spacer height={15}/>
+    <View>
+    <FacilitySelector
+      facilities={facilities}
+      selectedFacilityId={selectedFacilityId}
+      onFacilityChange={(id) => {
+        setSelectedFacilityId(id);
+      }}
+    />
+    <DateSelector/>
+    </View>
     <ScrollView horizontal>
-      <ScrollView></ScrollView>
+      <ScrollView>
+        <CourtAvalibilityGrid/>
+      </ScrollView>
     </ScrollView>
     </View>
     </>
