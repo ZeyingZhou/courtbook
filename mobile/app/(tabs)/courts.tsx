@@ -15,6 +15,14 @@ const facilities = [
   { id: '5', name: 'Lakeside Courts' },
 ]
 const Courts = () => {
+    const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  });
   const [selectedFacilityId, setSelectedFacilityId] = useState('1');
   const insets = useSafeAreaInsets();
   return (
@@ -34,7 +42,10 @@ const Courts = () => {
         setSelectedFacilityId(id);
       }}
     />
-    <DateSelector/>
+    <DateSelector
+      selectedDate={selectedDate}
+      onDateChange={setSelectedDate}
+    />
     </View>
     <ScrollView horizontal>
       <ScrollView>
