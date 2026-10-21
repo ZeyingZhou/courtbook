@@ -5,8 +5,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "../useColorScheme";
+import Colors from "@/constants/Colors";
 
 interface DateSelectorProps {
   selectedDate: string; // YYYY-MM-DD
@@ -47,7 +48,7 @@ export default function DateSelector({
   onDateChange,
 }: DateSelectorProps) {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const colors = Colors[colorScheme];
 
   const today = formatDate(new Date());
 
@@ -68,9 +69,9 @@ export default function DateSelector({
     year: "numeric",
   });
 
-  const foreground = isDark ? "#FFFFFF" : "#000000";
-  const background = isDark ? "#000000" : "#FFFFFF";
-  const border = isDark ? "#333333" : "#E5E5E5";
+  const foreground = colors.foreground;
+  const background = colors.background;
+  const border = colors.border;
 
   return (
     <View style={styles.container}>
