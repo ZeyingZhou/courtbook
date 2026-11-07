@@ -1,12 +1,10 @@
-interface Facility {
+export type Court = Readonly<{
   id: string;
   name: string;
-  address: string;
-}
+}>;
 
-interface Court {
+export type Facility = Readonly<{
   id: string;
-  facilityId: string;
   name: string;
-  sport: "Tennis" | "Badminton" | "Pickleball";
-}
+  courts: readonly Court[];
+}>;
