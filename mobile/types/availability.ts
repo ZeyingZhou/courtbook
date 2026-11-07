@@ -19,3 +19,7 @@ export type Booking = Readonly<{
   slot: Slot;
   confirmedAt: number;
 }>;
+
+export type ConfirmResult =
+  | { status: 'confirmed'; booking: Booking }
+  | { status: 'unavailable' };
