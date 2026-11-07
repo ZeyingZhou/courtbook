@@ -1,35 +1,29 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Colors from '@/constants/Colors';
-import { mockAvailability } from '@/data/courts';
+import { slotHours } from '@/data/courts';
+import { formatHour, slotKey } from '@/domain/availability';
+import type { DisplaySlot, Slot } from '@/types/availability';
+import type { Court } from '@/types/court';
 import { useColorScheme } from '../useColorScheme';
 import ThemedText from '../Themed/ThemedText';
 import TimeSlotCell from './TimeSlotCell';
 
-const courts = Array.from({ length: 7 }, (_, i) => String(i + 1));
-// 23:00 is closing time: the last bookable hour starts at 22:00.
-const hours = Array.from({ length: 15 }, (_, i) => i + 8);
-const formatHour = (hour: number) => `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`;
-
-export interface SlotSelection {
-  courtId: string;
-  startHour: number;
-  duration: 1 | 2;
-}
-
 interface Props {
-  selection: SlotSelection | null;
-  onSlotPress: (courtId: string, hour: number) => void;
+  courts: readonly Court[];
+  slots: readonly DisplaySlot[];
+  selection: Slot | null;
+  onSlotPress: (slot: Slot) => void;
 }
 
-export default function CourtAvalibilityGrid({ selection, onSlotPress }: Props) {
+export default function CourtAvalibilityGrid({ courts, slots, selection, onSlotPress }: Props) {
   const colors = Colors[useColorScheme()];
   return (
     <View style={styles.container}>
-      <ThemedText style={styles.hint}>Sample availability · Swipe to see all 7 courts</ThemedText>
+      <ThemedText style={styles.hint}>Sample availability · Swipe to see all {courts.length} courts</ThemedText>
       <ScrollView style={styles.scroll} nestedScrollEnabled>
         <View style={styles.row}>
           <View style={styles.timeColumn}>
-            {hours.map((hour) => (
+            {slotHours.map((hour) => (
               <View key={hour} style={[styles.time, { borderColor: colors.border }]}>
                 <ThemedText style={styles.timeText}>{formatHour(hour)}</ThemedText>
                 <ThemedText style={styles.endTime}>to {formatHour(hour + 1)}</ThemedText>
@@ -37,20 +31,18 @@ export default function CourtAvalibilityGrid({ selection, onSlotPress }: Props) 
             ))}
           </View>
           <ScrollView horizontal nestedScrollEnabled style={styles.scroll}>
-            {courts.map((courtId) => (
-              <View key={courtId} style={styles.courtColumn}>
-                {hours.map((hour) => {
-                  const startTime = `${String(hour).padStart(2, '0')}:00`;
-                  const slot = mockAvailability.find(
-                    (item) => item.courtId === courtId && item.startTime === startTime
-                  );
-                  return (
-                    <TimeSlotCell key={hour} courtNumber={courtId} available={slot?.available ?? true}
-                      selected={selection?.courtId === courtId && hour >= selection.startHour && hour < selection.startHour + selection.duration}
-                      onPress={() => onSlotPress(courtId, hour)}
-                      label={`Court ${courtId}, ${formatHour(hour)} to ${formatHour(hour + 1)}`} />
-                  );
-                })}
+            {courts.map((court) => (
+              <View key={court.id} style={styles.courtColumn}>
+                {slots.filter(({ slot }) => slot.courtId === court.id).map(({ slot, status }) => (
+                  <TimeSlotCell
+                    key={slotKey(slot)}
+                    courtNumber={court.id}
+                    status={status}
+                    selected={selection !== null && slotKey(selection) === slotKey(slot)}
+                    onPress={() => onSlotPress(slot)}
+                    label={`${court.name}, ${formatHour(slot.startHour)} to ${formatHour(slot.startHour + 1)}`}
+                  />
+                ))}
               </View>
             ))}
           </ScrollView>

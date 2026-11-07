@@ -1,17 +1,13 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native'
+import { View, Pressable, StyleSheet, Modal } from 'react-native'
 import ThemedText from '../Themed/ThemedText';
 import ThemedView from '../Themed/ThemedView';
 import { useColorScheme } from '../useColorScheme';
 import Colors from '@/constants/Colors';
-
-interface Facility {
-  id: string;
-  name: string
-}
+import type { Facility } from '@/types/court';
 
 interface Props {
-  facilities: Facility[]
+  facilities: readonly Facility[]
   selectedFacilityId: string
   onFacilityChange: (id: string) => void
 }
@@ -50,7 +46,6 @@ const FacilitySelector = ({facilities, selectedFacilityId, onFacilityChange}: Pr
             style={StyleSheet.absoluteFill}
             onPress={() => setVisible(false)}
           />
-          {/* Todo: Dark Mode Styling for the Modal */}
           <ThemedView style={[styles.sheet, {backgroundColor: backgroundColor}]}>
             <ThemedText style={styles.title}>Select Facility</ThemedText>
 

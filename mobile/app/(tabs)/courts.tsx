@@ -1,109 +1,101 @@
-import CourtAvalibilityGrid, { type SlotSelection } from '@/components/courts/CourtAvalibilityGrid';
+import CourtAvalibilityGrid from '@/components/courts/CourtAvalibilityGrid';
 import ThemedButton from '@/components/Themed/ThemedButton';
 import DateSelector from '@/components/courts/DateSelector';
 import FacilitySelector from '@/components/courts/FacilitySelector';
 import Spacer from '@/components/Spacer';
-import ThemedText from '@/components/Themed/ThemedText'
-import { useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
-import Colors from '@/constants/Colors'
-import { useColorScheme } from '@/components/useColorScheme'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ThemedText from '@/components/Themed/ThemedText';
+import { useEffect, useState } from 'react';
+import { Alert, AppState, StyleSheet, View } from 'react-native';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { facilities } from '@/data/courts';
+import { formatHour, formatLocalDate, getSlots, getSlotStatus, slotKey } from '@/domain/availability';
+import type { Slot } from '@/types/availability';
 
-const facilities = [
-  { id: '1', name: 'Riverside Tennis Center' },
-  { id: '2', name: 'Central Park Courts' },
-  { id: '3', name: 'Northside Racquet Club' },
-  { id: '4', name: 'Eastside Tennis Club' },
-  { id: '5', name: 'Lakeside Courts' },
-]
-const Courts = () => {
-    const [selectedDate, setSelectedDate] = useState(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  });
-  const [selectedFacilityId, setSelectedFacilityId] = useState('1');
-  const [selection, setSelection] = useState<SlotSelection | null>(null);
-  const formatHour = (hour: number) => `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`;
-  const selectionLabel = selection
-    ? `Court ${selection.courtId} · ${formatHour(selection.startHour)}–${formatHour(selection.startHour + selection.duration)}`
-    : 'Select a court and time to book';
-
-  const handleSlotPress = (courtId: string, hour: number) => {
-    setSelection((current) => {
-      if (current?.courtId === courtId) {
-        if (hour >= current.startHour && hour < current.startHour + current.duration) {
-          return current.duration === 1 ? null : {
-            courtId, startHour: hour === current.startHour ? hour + 1 : current.startHour, duration: 1,
-          };
-        }
-        if (current.duration === 1 && Math.abs(hour - current.startHour) === 1) {
-          return { courtId, startHour: Math.min(hour, current.startHour), duration: 2 };
-        }
-      }
-      return { courtId, startHour: hour, duration: 1 };
+export default function Courts() {
+  const [selectedDate, setSelectedDate] = useState(() => formatLocalDate(new Date()));
+  const [selectedFacility, setSelectedFacility] = useState(facilities[0]);
+  const [selection, setSelection] = useState<Slot | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setTimeout(() => setNow(new Date()), 60_000 - now.getTime() % 60_000);
+    return () => clearTimeout(timer);
+  }, [now]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(new Date());
     });
-  };
+    return () => subscription.remove();
+  }, []);
+
+  const slots = getSlots({ facilityId: selectedFacility.id, date: selectedDate, bookings: [], now });
+  const availableSelection = selection && getSlotStatus({ slot: selection, bookings: [], now }) === 'available'
+    ? selection : null;
+  const selectionLabel = availableSelection
+    ? `Court ${availableSelection.courtId} · ${formatHour(availableSelection.startHour)} to ${formatHour(availableSelection.startHour + 1)}`
+    : 'Select a court and one-hour time slot';
   const insets = useSafeAreaInsets();
   const colors = Colors[useColorScheme()];
+
+  const handleSlotPress = (slot: Slot) => {
+    if (getSlotStatus({ slot, bookings: [], now: new Date() }) !== 'available') {
+      setNow(new Date());
+      return;
+    }
+    setSelection((current) => current && slotKey(current) === slotKey(slot) ? null : slot);
+  };
+
   return (
-    <>
-    <View
-      style={[styles.container, {paddingTop: insets.top + 20, backgroundColor: colors.background}]}
-    >
-    <View>
-        <ThemedText style={styles.title}>CourtBook 🎾</ThemedText>
-    </View>
-    <Spacer height={15}/>
-    <View>
-    <FacilitySelector
-      facilities={facilities}
-      selectedFacilityId={selectedFacilityId}
-      onFacilityChange={(id) => {
-        setSelectedFacilityId(id);
-        setSelection(null);
-      }}
-    />
-    <DateSelector
-      selectedDate={selectedDate}
-      onDateChange={(date) => { setSelectedDate(date); setSelection(null); }}
-    />
-    </View>
-    <CourtAvalibilityGrid selection={selection} onSlotPress={handleSlotPress}/>
-    <View style={[styles.bookingFooter, { borderColor: colors.border }]}>
-      <ThemedText>{selectionLabel}</ThemedText>
-      <ThemedButton
-        title="Book"
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !selection }}
-        disabled={!selection}
-        style={{ opacity: selection ? 1 : 0.4, alignItems: 'center', marginBottom: 0 }}
-        onPress={() => {
-          if (!selection) return;
-          Alert.alert('Booking preview', `${facilities.find((facility) => facility.id === selectedFacilityId)?.name}\n${selectedDate}\n${selectionLabel}\n\nBooking confirmation is not connected yet.`);
-        }}
+    <View style={[styles.container, { paddingTop: insets.top + 20, backgroundColor: colors.background }]}>
+      <ThemedText style={styles.title}>CourtBook 🎾</ThemedText>
+      <Spacer height={15} />
+      <View>
+        <FacilitySelector
+          facilities={facilities}
+          selectedFacilityId={selectedFacility.id}
+          onFacilityChange={(id) => {
+            const facility = facilities.find((item) => item.id === id);
+            if (!facility) return;
+            setSelectedFacility(facility);
+            setSelection(null);
+          }}
+        />
+        <DateSelector
+          selectedDate={selectedDate}
+          onDateChange={(date) => { setSelectedDate(date); setSelection(null); }}
+        />
+      </View>
+      <CourtAvalibilityGrid
+        courts={selectedFacility.courts}
+        slots={slots}
+        selection={availableSelection}
+        onSlotPress={handleSlotPress}
       />
+      <View style={[styles.bookingFooter, { borderColor: colors.border }]}>
+        <ThemedText>{selectionLabel}</ThemedText>
+        <ThemedButton
+          title="Preview sample booking"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !availableSelection }}
+          disabled={!availableSelection}
+          style={{ opacity: availableSelection ? 1 : 0.4, alignItems: 'center', marginBottom: 0 }}
+          onPress={() => {
+            if (!availableSelection) return;
+            if (getSlotStatus({ slot: availableSelection, bookings: [], now: new Date() }) !== 'available') {
+              setNow(new Date());
+              return;
+            }
+            Alert.alert('Sample booking preview', `${selectedFacility.name}\n${selectedDate}\n${selectionLabel}\n\nPreview only. No reservation is created.`);
+          }}
+        />
+      </View>
     </View>
-    </View>
-    </>
-  )
+  );
 }
 
-export default Courts
-
 const styles = StyleSheet.create({
-    bookingFooter: { paddingTop: 16, marginTop: 12, borderTopWidth: 1 },
-    container: {
-        flex:1,
-        padding: 20,
-
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: "bold"
-    }
-})
+  bookingFooter: { paddingTop: 16, marginTop: 12, borderTopWidth: 1 },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 20, fontWeight: 'bold' },
+});

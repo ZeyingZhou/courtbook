@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,39 +8,15 @@ import {
 import { useColorScheme } from "../useColorScheme";
 import Colors from "@/constants/Colors";
 
+import { addDays, canGoToPreviousWeek, formatLocalDate, localDateStart, startOfWeek } from '@/domain/availability';
+import type { LocalDate } from '@/types/availability';
+
 interface DateSelectorProps {
-  selectedDate: string; // YYYY-MM-DD
-  onDateChange: (date: string) => void;
+  selectedDate: LocalDate;
+  onDateChange: (date: LocalDate) => void;
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function parseDate(value: string): Date {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function startOfWeek(date: Date): Date {
-  const result = new Date(date);
-  const weekday = (result.getDay() + 6) % 7;
-
-  result.setDate(result.getDate() - weekday);
-  return result;
-}
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
 
 export default function DateSelector({
   selectedDate,
@@ -50,19 +25,15 @@ export default function DateSelector({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
-  const today = formatDate(new Date());
-
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(parseDate(selectedDate))
-  );
-
-  const dates = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
-  );
-
-  const canGoPrevious =
-    formatDate(addDays(weekStart, 6)) >= today;
+  const today = formatLocalDate(new Date());
+  const [navigation, setNavigation] = useState({ date: selectedDate, offset: 0 });
+  if (navigation.date !== selectedDate) {
+    setNavigation({ date: selectedDate, offset: 0 });
+  }
+  const offset = navigation.date === selectedDate ? navigation.offset : 0;
+  const weekStart = addDays(startOfWeek(localDateStart(selectedDate)), offset * 7);
+  const dates = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const canGoPrevious = canGoToPreviousWeek(weekStart, today);
 
   const monthLabel = weekStart.toLocaleDateString("en-US", {
     month: "long",
@@ -77,7 +48,10 @@ export default function DateSelector({
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => setWeekStart(addDays(weekStart, -7))}
+          accessibilityRole="button"
+          accessibilityLabel="Previous week"
+          accessibilityState={{ disabled: !canGoPrevious }}
+          onPress={() => setNavigation({ date: selectedDate, offset: offset - 1 })}
           disabled={!canGoPrevious}
           style={styles.arrow}
         >
@@ -96,7 +70,9 @@ export default function DateSelector({
         </Text>
 
         <Pressable
-          onPress={() => setWeekStart(addDays(weekStart, 7))}
+          accessibilityRole="button"
+          accessibilityLabel="Next week"
+          onPress={() => setNavigation({ date: selectedDate, offset: offset + 1 })}
           style={styles.arrow}
         >
           <Text style={{ color: foreground, fontSize: 24 }}>›</Text>
@@ -105,13 +81,16 @@ export default function DateSelector({
 
       <View style={styles.week}>
         {dates.map((date, index) => {
-          const value = formatDate(date);
+          const value = formatLocalDate(date);
           const isSelected = value === selectedDate;
           const isPast = value < today;
 
           return (
             <Pressable
               key={value}
+              accessibilityRole="button"
+              accessibilityLabel={date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              accessibilityState={{ disabled: isPast, selected: isSelected }}
               disabled={isPast}
               onPress={() => onDateChange(value)}
               style={[

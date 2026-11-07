@@ -1,24 +1,33 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import type { SlotStatus } from '@/types/availability';
 import { useColorScheme } from '../useColorScheme';
 import ThemedText from '../Themed/ThemedText';
 
 interface TimeSlotCellProps {
   courtNumber: string;
-  available: boolean;
+  status: SlotStatus;
   label: string;
   onPress?: () => void;
   selected?: boolean;
 }
 
-export default function TimeSlotCell({ courtNumber, available, label, onPress, selected = false }: TimeSlotCellProps) {
+const statusLabels: Record<SlotStatus, string> = {
+  available: 'Available',
+  unavailable: 'Unavailable in sample schedule',
+  elapsed: 'Start time has passed',
+  booked: 'Booked',
+};
+
+export default function TimeSlotCell({ courtNumber, status, label, onPress, selected = false }: TimeSlotCellProps) {
+  const available = status === 'available';
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   return (
     <View style={styles.cell}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label}, ${available ? 'Available' : 'Booked'}`}
+        accessibilityLabel={`${label}, ${statusLabels[status]}`}
         accessibilityState={{ disabled: !available, selected }}
         disabled={!available}
         onPress={onPress}
